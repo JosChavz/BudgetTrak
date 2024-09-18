@@ -1,0 +1,7 @@
+# Deny all access to this directory
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^.*$ /404.php [R=404,L]
+</IfModule>
+
+# Deny from all
