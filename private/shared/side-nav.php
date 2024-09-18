@@ -41,7 +41,7 @@ global $session;
             <img src="<?= HTTP ?>/public/images/Preview-8.png" alt="profile pic">
         </div>
         <span id="aside-user-name"><?= $session->get_user_name() ?></span>
-        <a id="logout-user" href="<?= HTTP ?>/public/auth/logout.php" aria-label="log out">
+        <a id="logout-user" href="<?= HTTP ?>public/auth/logout.php" aria-label="log out">
             <i class="fa-solid fa-right-from-bracket"></i>
         </a>
     </div>
