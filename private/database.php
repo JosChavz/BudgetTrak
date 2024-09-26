@@ -3,7 +3,7 @@
 function db_connect(): mysqli
 {
     global $env;
-    return new mysqli('localhost', $env['DB_USER'], $env['DB_PASS'], $env['DB_TABLE']);
+    return new mysqli($env['DB_SERVER'], $env['DB_USER'], $env['DB_PASS'], $env['DB_TABLE']);
 }
 
 function db_escape($connection, $string) {

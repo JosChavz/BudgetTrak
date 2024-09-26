@@ -8,20 +8,19 @@ use classes\Database;
 use classes\Expense;
 use classes\Session;
 
-$site_name = 'https://budgettrak.hozay.io/';
-
 $private_end = strpos(__DIR__, '/private') + 1;
 define("ROOT", substr(__DIR__, 0, $private_end));
-define("HTTP", ($_SERVER["SERVER_NAME"] == "localhost")
-    ? "http://localhost"
-    : $site_name
+
+$env = parse_ini_file(ROOT . 'private/.env');
+
+define("HTTP", ($env["PRODUCTION"] === "false")
+    ? $env['DEVELOPMENT_SERVER']
+    : $env['PRODUCTION_SERVER']
 );
 
 require_once 'functions.php';
 require_once 'database.php';
 require_once 'validation_functions.php';
-
-$env = parse_ini_file(ROOT . 'private/.env');
 
 $db = db_connect();
 $errors = array();

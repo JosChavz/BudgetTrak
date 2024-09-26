@@ -68,14 +68,14 @@ require_once ROOT . '/private/shared/header.php';
                             <td><?= (isset($expense->bid)) ? htmlspecialchars($user_banks[$expense->bid]) : 'Cash' ?></td>
                             <td><?= $expense->type ?></td>
                             <td>
+                                <a class="view" href="view.php?id=<?= $expense->id ?>">
+                                    <i title="view expense" class="fa-solid fa-eye"></i>
+                                </a>
                                 <a class="edit" href="edit.php?id=<?= $expense->id ?>">
                                     <i title="edit expense" class="fa-solid fa-pen"></i>
                                 </a>
                                 <a class="delete" href="delete.php?id=<?= $expense->id ?>">
                                     <i title="delete expense" class="fa-solid fa-trash"></i>
-                                </a>
-                                <a class="view" href="view.php?id=<?= $expense->id ?>">
-                                    <i title="view expense" class="fa-solid fa-eye"></i>
                                 </a>
                             </td>
                         </tr>
@@ -84,7 +84,7 @@ require_once ROOT . '/private/shared/header.php';
                         ?>
                     </tbody>
                 </table>
-                <?= $pagination->display('./index.php') ?>
+                <?= $pagination->display() ?>
             </div>
         </main>
     </div>

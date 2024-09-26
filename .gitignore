@@ -1,1 +1,5 @@
 */.env
+.idea
+._*
+*/**/._*
+./sandbox.php

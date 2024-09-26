@@ -14,7 +14,7 @@ global $session;
     $loggedInMenu = '';
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="en" style="background: black">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport"

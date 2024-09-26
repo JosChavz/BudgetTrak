@@ -23,34 +23,76 @@ class Pagination
         return ceil($this->total_count / $this->per_page);
     }
 
-    public function next_page() :int {
+    public function next_page() : int {
         $next = $this->current_page + 1;
         return ($next <= $this->total_pages()) ? $next : -1;
     }
 
-    public function previous_page() :int {
+    public function previous_page() : int {
         $previous = $this->current_page - 1;
         return ($previous > 0) ? $previous : -1;
     }
 
-    public function display($base_url) : string {
+    public function display() : string {
+        $full_link = self::get_protocol() . "$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+        $init_link = self::get_protocol() . parse_url($full_link, PHP_URL_HOST) . ':'. parse_url($full_link, PHP_URL_PORT) . parse_url($full_link, PHP_URL_PATH);
+
+        $queries_str = parse_url($full_link, PHP_URL_QUERY);
+        $queries = array();
+
+        // Split the queries to an associative array
+        if (!empty($queries_str)) {
+            parse_str($queries_str, $queries);
+        }
+
+        // Builds out the query based on valid information
+        $next = $this->next_page();
+        $prev = $this->previous_page();
+        $next_class = '';
+        $prev_class = '';
+        if ($next !== -1) {
+            $queries['page'] = $next;
+        } else {
+            $next_class = 'disabled';
+        }
+        $query_string = http_build_query($queries);
+        $next_page_link = $init_link . '?' . $query_string;
+
+        if ($prev !== -1) {
+            $queries['page'] = $prev;
+        } else {
+            // Same page that user is on
+            $queries['page'] = $next - 1;
+            $prev_class = 'disabled';
+        }
+        $query_string = http_build_query($queries);
+        $prev_page_link = $init_link . '?' . $query_string;
+
         ob_start();
         ?>
 
         <?php if ($this->total_count > 1): ?>
             <div id="pagination">
-                <?php if ($this->previous_page() != -1): ?>
-                    <a href="<?= $base_url ?>?page=<?= $this->previous_page() ?>">Previous Page</a>
-                <?php endif; ?>
-
-                <?php if ($this->next_page() != -1): ?>
-                    <a href="<?= $base_url ?>?page=<?= $this->next_page() ?>">Next Page</a>
-                <?php endif; ?>
+                <a class="<?php echo $prev_class ?>" href="<?= $prev_page_link ?>">Previous Page</a>
+                <a class="<?php echo $next_class ?>" href="<?= $next_page_link ?>">Next Page</a>
             </div>
         <?php endif; ?>
 
         <?php
         return ob_get_clean();
+    }
+
+    private function get_protocol() : string {
+        if (isset($_SERVER['HTTPS']) &&
+            ($_SERVER['HTTPS'] == 'on' || $_SERVER['HTTPS'] == 1) ||
+            isset($_SERVER['HTTP_X_FORWARDED_PROTO']) &&
+            $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https') {
+            $protocol = 'https://';
+        }
+        else {
+            $protocol = 'http://';
+        }
+        return $protocol;
     }
 
 }

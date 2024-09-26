@@ -1,0 +1,29 @@
+version: '3'
+services:
+  www:
+    image: php:apache
+    volumes:
+      - "./:/var/www/html"
+    ports:
+      - "81:80"
+      - "444:443"
+  # command: docker-php-ext-install mysqli
+  # command: a2enmod rewrite
+  db:
+    image: mysql:latest
+    ports:
+      - "3306:3306"
+    volumes:
+      - "./db/u754421876_budgettrak.sql:/docker-entrypoint-initdb.d/1.sql"
+    environment:
+      - MYSQL_DATABASE=budget-tracker
+      - MYSQL_USER=php_docker
+      - MYSQL_PASSWORD=password
+      - MYSQL_ALLOW_EMPTY_PASSWORD=1
+  phpmyadmin:
+    image: phpmyadmin:latest
+    ports:
+      - "8001:80"
+    environment:
+      - PMA_HOST=db
+      - PMA_PORT=3306

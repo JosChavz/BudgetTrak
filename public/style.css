@@ -520,9 +520,9 @@ table tbody tr td .table-radio-container .checkmark {
 #pagination {
     display: flex;
     align-items: center;
-    gap: 5px;
-    margin: 10px;
-    padding: 5px;
+    justify-content: space-between;
+    margin: 10px 0;
+    padding: 5px 0;
 }
 #pagination a {
     display: block;
@@ -531,4 +531,9 @@ table tbody tr td .table-radio-container .checkmark {
     border-radius: 5px;
     background-color: var(--dark-background);
     text-decoration: none;
+}
+#pagination .disabled {
+    pointer-events: none;
+    cursor: not-allowed;
+    text-decoration: line-through;
 }
