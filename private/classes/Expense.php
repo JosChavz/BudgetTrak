@@ -2,6 +2,8 @@
 
 namespace classes;
 
+use http\Exception\RuntimeException;
+
 class Expense extends Database
 {
     static protected array $columns = ['id', 'uid', 'bid', 'name', 'amount', 'description', 'type', 'category', 'created_at'];
@@ -105,6 +107,81 @@ class Expense extends Database
 
         $this->add_errors($temp_errors);
         return count($temp_errors) == 0;
+    }
+
+    public static function count_all_from_user_and_bank(int $user_id, int $bank_id) : int {
+        $sql = "SELECT COUNT(*) FROM " . static::$table_name . " WHERE uid=" . self::$database->escape_string($user_id) . " AND bid=" . self::$database->escape_string($bank_id);
+        $result = self::$database->query($sql);
+        $row = $result->fetch_assoc();
+        $result->free();
+        return array_shift($row);
+    }
+
+    public static function select_from_date(int $bank_id, int $month, int $year, array $args=[]) : array {
+        $sql = "SELECT * FROM transactions WHERE bid = " . self::$database->escape_string($bank_id) .
+            " AND MONTH(created_at) = " . self::$database->escape_string($month) . " AND YEAR(created_at) = " .
+            self::$database->escape_string($year) . " ORDER BY created_at DESC";
+
+        if (isset($args['limit'])) {
+            $sql .= " LIMIT " . self::$database->escape_string($args['limit']);
+        }
+        if (isset($args['offset'])) {
+            $sql .= " OFFSET " . self::$database->escape_string($args['offset']);
+        }
+        return self::find_by_sql($sql);
+    }
+
+    public static function select_summation(int $user_id, string $type, array $args=[]) : string {
+        $sql = "SELECT SUM(amount) FROM transactions WHERE uid=" . $user_id . " AND type='" . self::$database->escape_string($type) . "'";
+        if (isset($args['bank_id'])) {
+            $sql .= " AND bid=" . self::$database->escape_string($args['bank_id']);
+        }
+        if (isset($args['year'])) {
+            $sql .= " AND YEAR(created_at) = " . self::$database->escape_string($args['year']);
+        }
+        if (isset($args['month'])) {
+            $sql .= " AND MONTH(created_at) = " . self::$database->escape_string($args['month']);
+        }
+
+        $result = self::$database->query($sql);
+        $row = $result->fetch_assoc();
+        $result->free();
+        return array_shift($row) ?? 0;
+    }
+
+    public static function select_all_type_summation(int $user_id, array $cats=[], array $args=[]) : array {
+        $type_summations = array();
+
+        // defaults to CATEGORY
+        if (empty($cats)) {
+            $cats = static::CATEGORY;
+        }
+
+        foreach ($cats as $cat) {
+            $sql = "SELECT SUM(amount) FROM transactions WHERE uid=" . $user_id . " AND category='" . self::$database->escape_string($cat) . "'";
+
+            if (isset($args['bank_id'])) {
+                $sql .= " AND bid=" . self::$database->escape_string($args['bank_id']);
+            }
+            if (isset($args['year'])) {
+                $sql .= " AND YEAR(created_at) = " . self::$database->escape_string($args['year']);
+            }
+            if (isset($args['month'])) {
+                $sql .= " AND MONTH(created_at) = " . self::$database->escape_string($args['month']);
+            }
+
+            $result = self::$database->query($sql);
+            $row = $result->fetch_assoc();
+            $result->free();
+            $curr_sum = array_shift($row);
+
+            // Only add it if exists
+            if (isset($curr_sum)) {
+                $type_summations[$cat] = $curr_sum;
+            }
+        }
+
+        return $type_summations;
     }
 
 }

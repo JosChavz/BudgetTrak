@@ -220,7 +220,7 @@ main {
     justify-content: space-between;
     align-items: center;
 }
-.top-table a {
+.button {
     display: block;
     padding: 15px 20px;
     background: var(--dark-accent);

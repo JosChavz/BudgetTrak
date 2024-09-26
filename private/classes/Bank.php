@@ -86,7 +86,6 @@ class Bank extends Database
         $results = [];
         $sql = "SELECT id, name FROM banks WHERE uid=" . self::$database->escape_string($user_id) . ';';
         $result = self::$database->query($sql);
-        $data = $result->fetch_assoc();
         foreach ($result as $row) {
             $results[$row['id']] = $row['name'];
         }

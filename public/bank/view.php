@@ -1,14 +1,13 @@
 <?php
+global $session, $db;
 
 use classes\Bank;
+use classes\Expense;
+use classes\Pagination;
 
 require_once '../../private/initialize.php';
 
-global $db, $errors, $status_message;
-
-// DB CONNECTIONS
-require_once ROOT . '/private/sql/bank.php';
-require_once ROOT . '/private/sql/expense.php';
+global $db;
 
 // Variables
 $user_id = $_SESSION['user_id'] ?? '';
@@ -23,8 +22,6 @@ if (!isset($_GET['id']) || !is_numeric($bank_id)) {
 }
 
 $summation = array();
-$expense_sum = 0;
-$income_sum = 0;
 $dataPoints = array();
 $current_URL = $_SERVER["REQUEST_URI"];
 $arrow_next_URL = parse_url($current_URL, PHP_URL_PATH) . '?id=' . $bank_id . '&month=';
@@ -47,16 +44,28 @@ if (($month - 1) <= 0) {
 // Gets all data based off the query
 $bank = Bank::find_by_id((int)$bank_id, $user_id);
 
-// Gets the expenses for that bank based off the bank_id and selected month
-$transactions = select_transaction_from_bank_month_year((int)$bank_id, $month, $year);
-
-// Gets the count for expenses
-$total_page_count = count_transactions($bank_id, $user_id);
-
 if (empty($bank)) {
     h(HTTP . '/expense');
     exit();
 }
+
+$extraTitle = 'Expenses';
+$user_id = $session->get_user_id();
+
+$user_banks = Bank::find_by_user_id($user_id);
+
+$current_page = $_GET['page'] ?? 1;
+$per_page = 10;
+$total_count = Expense::count_all_from_user_and_bank($session->get_user_id(), $bank_id);
+$pagination = new Pagination($current_page, $per_page, $total_count);
+
+// Gets the expenses for that bank based off the bank_id and selected month
+$transactions = Expense::select_from_date((int)$bank_id, $month, $year, ['limit' => $per_page, 'offset' => $pagination->offset()]);
+
+$expense_summation = Expense::select_summation($user_id, Expense::TYPE['EXPENSE'], ['bank_id' => $bank_id, 'month' => $month, 'year' => $year]);
+$income_summation = Expense::select_summation($user_id, Expense::TYPE['INCOME'], ['bank_id' => $bank_id, 'month' => $month, 'year' => $year]);
+
+$type_sum = Expense::select_all_type_summation($user_id, [], ['bank_id' => $bank_id, 'month' => $month, 'year' => $year]);
 
 require_once ROOT . '/private/shared/header.php';
 
@@ -67,7 +76,7 @@ require_once ROOT . '/private/shared/header.php';
         <main>
             <div class="top-table">
                 <h1>View Bank</h1>
-                <a href="edit.php?id=<?= $bank_id ?>">Edit</a>
+                <a class="button" href="edit.php?id=<?= $bank_id ?>">Edit</a>
             </div>
 
             <section id="bank_bank-info">
@@ -81,6 +90,11 @@ require_once ROOT . '/private/shared/header.php';
             </section>
 
             <section id="bank_expenses" class="table-wrapper">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 25px">
+                    <h2>Expense Table</h2>
+                    <a class="button" href="<?php echo HTTP ?>/public/expense/create.php">New Expense</a>
+                </div>
+
                 <div id="bank_month-nav">
                     <a href="<?= $arrow_prev_URL ?>">&#8656;</a>
                     <span><?= $month . '/' . $year ?></span>
@@ -97,32 +111,20 @@ require_once ROOT . '/private/shared/header.php';
                     </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($transactions as $transaction):
-                        if ($transaction['type'] === 'EXPENSE') {
-                            if (isset($summation[$transaction['category']])) {
-                                $summation[$transaction['category']] += $transaction['amount'];
-                            } else {
-                                $summation[$transaction['category']] = $transaction['amount'];
-                            }
-
-                            $expense_sum += $transaction['amount'];
-                        } else {
-                            $income_sum += $transaction['amount'];
-                        }
-                        ?>
+                        <?php foreach ($transactions as $transaction): ?>
                         <tr>
-                            <td><?= htmlspecialchars($transaction['name']) ?></td>
-                            <td><?= '$' . number_format($transaction['amount'], 2) ?></td>
-                            <td><?= $transaction['category'] ?></td>
-                            <td><?= $transaction['type'] ?></td>
+                            <td><?= htmlspecialchars($transaction->name) ?></td>
+                            <td><?= '$' . number_format($transaction->amount, 2) ?></td>
+                            <td><?= $transaction->category ?></td>
+                            <td><?= $transaction->type ?></td>
                             <td>
-                                <a class="edit" href="/expense/edit.php?id=<?= $transaction['id'] ?>">
+                                <a class="edit" href="/expense/edit.php?id=<?= $transaction->id ?>">
                                     <i title="edit expense" class="fa-solid fa-pen"></i>
                                 </a>
-                                <a class="delete" href="/expense/delete.php?id=<?= $transaction['id'] ?>">
+                                <a class="delete" href="/expense/delete.php?id=<?= $transaction->id ?>">
                                     <i title="delete expense" class="fa-solid fa-trash"></i>
                                 </a>
-                                <a class="view" href="/expense/view.php?id=<?= $transaction['id'] ?>">
+                                <a class="view" href="/expense/view.php?id=<?= $transaction->id ?>">
                                     <i title="view expense" class="fa-solid fa-eye"></i>
                                 </a>
                             </td>
@@ -130,16 +132,13 @@ require_once ROOT . '/private/shared/header.php';
                         <?php
                         endforeach;
                         // Iterate through summation to initialize data points
-                        foreach ($summation as $category => $amount) {
-                            $dataPoints[] = array('label' => $category, 'y' => ($amount / $expense_sum) * 100);
+                        foreach ($type_sum as $category => $amount) {
+                            $dataPoints[] = array('label' => $category, 'y' => ($amount / $expense_summation) * 100);
                         }
                         ?>
                     </tbody>
                 </table>
-
-                <div id="bank_pagination">
-
-                </div>
+                <?= $pagination->display() ?>
             </section>
         </main>
     </div>
@@ -164,8 +163,8 @@ require_once ROOT . '/private/shared/header.php';
         <?php
 
         $chart_data_points = array(
-                array("y" => $income_sum, "label" => "Income"),
-                array("y" => $expense_sum, "label" => "Expense")
+                array("y" => $income_summation, "label" => "Income"),
+                array("y" => $expense_summation, "label" => "Expense")
         );
 
         ?>
