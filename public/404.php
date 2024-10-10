@@ -11,11 +11,11 @@ require_once '../private/initialize.php';
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>BudgetTrak | 404</title>
-    <link rel="stylesheet" href="<?= HTTP ?>/style.css">
+    <link rel="stylesheet" href="<?php echo HTTP; ?>/public/style.css">
 </head>
 <body>
     <div id="not-found">
-        <img src="images/snake-404.png" alt="snake">
+        <img src="<?php echo HTTP; ?>/public/images/snake-404.png" alt="snake">
         <h1>404 Not Found</h1>
     </div>
 </body>
