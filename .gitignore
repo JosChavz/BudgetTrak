@@ -4,3 +4,5 @@
 */**/._*
 ./sandbox.php
 .DS_STORE
+.htaccess
+.htpasswd
